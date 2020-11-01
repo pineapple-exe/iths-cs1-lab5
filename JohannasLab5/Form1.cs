@@ -165,33 +165,34 @@ namespace JohannasLab5
 
             while (downloadsInDistress.Count > 0)
             {
-                Task<IMGKit> readyToBeSaved = await Task.WhenAny(downloadsInDistress);
-                downloadsInDistress.Remove(readyToBeSaved);
-                IMGKit kitty;
                 try
                 {
-                    kitty = await readyToBeSaved;
+                    Task<IMGKit> readyToBeSaved = await Task.WhenAny(downloadsInDistress);
+                    downloadsInDistress.Remove(readyToBeSaved);
+                    IMGKit kitty = await readyToBeSaved;
+
+                    if (kitty.Content.Length > 0)
+                    {
+                        await WriteAllBytesAsync(URLToPath(kitty.URL), kitty.Content);
+                    }
+                    else
+                    {
+                        countessEmptiness++;
+                        EmptyLinkLabel.Text = "Empty links: " + countessEmptiness;
+                        EmptyLinkLabel.Visible = true;
+                    }
                 }
                 catch
                 {
                     lostSouls++;
                     LostFilesLabel.Text = "Unsuccessfully saved: " + lostSouls;
                     LostFilesLabel.Visible = true;
-                    continue;
                 }
-
-                if (kitty.Content.Length > 0)
+                finally
                 {
-                    await WriteAllBytesAsync(URLToPath(kitty.URL), kitty.Content);
+                    countProgress++;
+                    CalculateProgress(imgURLs.Count, countProgress);
                 }
-                else
-                {
-                    countessEmptiness++;
-                    EmptyLinkLabel.Text = "Empty links: " + countessEmptiness;
-                    EmptyLinkLabel.Visible = true;
-                }
-                countProgress++;
-                CalculateProgress(imgURLs.Count, countProgress);
             }
         }
 
@@ -212,33 +213,34 @@ namespace JohannasLab5
                 //Ensure no more than seven concurrent downloads.
                 while (downloadsInDistress.Count > 6 || (i == imgURLs.Count - 1 && downloadsInDistress.Count > 0))
                 {
-                    Task<IMGKit> readyToBeSaved = await Task.WhenAny(downloadsInDistress);
-                    downloadsInDistress.Remove(readyToBeSaved);
-                    IMGKit kitty;
                     try
                     {
-                        kitty = await readyToBeSaved;
+                        Task<IMGKit> readyToBeSaved = await Task.WhenAny(downloadsInDistress);
+                        downloadsInDistress.Remove(readyToBeSaved);
+                        IMGKit kitty = await readyToBeSaved;
+
+                        if (kitty.Content.Length > 0)
+                        {
+                            await WriteAllBytesAsync(URLToPath(kitty.URL), kitty.Content);
+                        }
+                        else
+                        {
+                            countessEmptiness++;
+                            EmptyLinkLabel.Text = "Empty links: " + countessEmptiness;
+                            EmptyLinkLabel.Visible = true;
+                        }
                     }
                     catch
                     {
                         lostSouls++;
                         LostFilesLabel.Text = "Unsuccessfully saved: " + lostSouls;
                         LostFilesLabel.Visible = true;
-                        continue;
                     }
-
-                    if (kitty.Content.Length > 0)
+                    finally
                     {
-                        await WriteAllBytesAsync(URLToPath(kitty.URL), kitty.Content);
+                        countProgress++;
+                        CalculateProgress(imgURLs.Count, countProgress);
                     }
-                    else
-                    {
-                        countessEmptiness++;
-                        EmptyLinkLabel.Text = "Empty links: " + countessEmptiness;
-                        EmptyLinkLabel.Visible = true;
-                    }
-                    countProgress++;
-                    CalculateProgress(imgURLs.Count, countProgress);
                 }
             }
         }
