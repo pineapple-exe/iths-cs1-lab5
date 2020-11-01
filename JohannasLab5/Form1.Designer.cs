@@ -43,6 +43,8 @@
             this.EmptyLinkLabel = new System.Windows.Forms.Label();
             this.DownloadCompletedLabel = new System.Windows.Forms.Label();
             this.DownloadCompletedTimer = new System.Windows.Forms.Timer(this.components);
+            this.ThrottleCheckBox = new System.Windows.Forms.CheckBox();
+            this.LostFilesLabel = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // URLEaterTextBox
@@ -175,12 +177,35 @@
             this.DownloadCompletedTimer.Interval = 5000;
             this.DownloadCompletedTimer.Tick += new System.EventHandler(this.DownloadCompletedTimer_Tick);
             // 
+            // ThrottleCheckBox
+            // 
+            this.ThrottleCheckBox.AutoSize = true;
+            this.ThrottleCheckBox.Location = new System.Drawing.Point(152, 225);
+            this.ThrottleCheckBox.Name = "ThrottleCheckBox";
+            this.ThrottleCheckBox.Size = new System.Drawing.Size(79, 23);
+            this.ThrottleCheckBox.TabIndex = 11;
+            this.ThrottleCheckBox.Text = "Throttle";
+            this.ThrottleCheckBox.UseVisualStyleBackColor = true;
+            // 
+            // LostFilesLabel
+            // 
+            this.LostFilesLabel.AutoSize = true;
+            this.LostFilesLabel.Font = new System.Drawing.Font("Segoe UI Semibold", 7.8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.LostFilesLabel.Location = new System.Drawing.Point(50, 293);
+            this.LostFilesLabel.Name = "LostFilesLabel";
+            this.LostFilesLabel.Size = new System.Drawing.Size(148, 19);
+            this.LostFilesLabel.TabIndex = 12;
+            this.LostFilesLabel.Text = "Unsuccessfully saved: \r\n";
+            this.LostFilesLabel.Visible = false;
+            // 
             // IMGHunterForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 17F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.GhostWhite;
             this.ClientSize = new System.Drawing.Size(883, 612);
+            this.Controls.Add(this.LostFilesLabel);
+            this.Controls.Add(this.ThrottleCheckBox);
             this.Controls.Add(this.DownloadCompletedLabel);
             this.Controls.Add(this.EmptyLinkLabel);
             this.Controls.Add(this.ProgressBar);
@@ -220,6 +245,8 @@
         private System.Windows.Forms.Label EmptyLinkLabel;
         private System.Windows.Forms.Timer DownloadCompletedTimer;
         private System.Windows.Forms.Label DownloadCompletedLabel;
+        private System.Windows.Forms.CheckBox ThrottleCheckBox;
+        private System.Windows.Forms.Label LostFilesLabel;
     }
 }
 

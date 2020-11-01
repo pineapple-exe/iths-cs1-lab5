@@ -31,6 +31,7 @@ namespace JohannasLab5
                 ImageLinksTextBox.Clear();
                 imgURLs.Clear();
 
+                LostFilesLabel.Visible = false;
                 EmptyLinkLabel.Visible = false;
                 ProgressBar.Visible = false;
                 ProgressBar.Value = 0;
@@ -54,7 +55,7 @@ namespace JohannasLab5
             }
         }
 
-        private void HandleURL()
+        private async Task HandleURL()
         {
             if (!Uri.IsWellFormedUriString(URLEaterTextBox.Text, UriKind.Absolute))
             {
@@ -66,13 +67,12 @@ namespace JohannasLab5
             else
             {
                 HttpClient webWizard = new HttpClient();
-                Task<byte[]> data = webWizard.GetByteArrayAsync(URLEaterTextBox.Text);
+                Byte[] data = await webWizard.GetByteArrayAsync(URLEaterTextBox.Text);
 
                 Regex pattern = new Regex("(?<=<img.*?src=\")(.*?)(?=\")");
                 imgURLs = new List<string>();
-                data.Wait();
 
-                string dataString = Encoding.ASCII.GetString(data.Result);
+                string dataString = Encoding.UTF8.GetString(data);
                 MatchCollection imgMatches = pattern.Matches(dataString);
 
                 foreach (Match m in imgMatches)
@@ -88,10 +88,13 @@ namespace JohannasLab5
                 imgURLs = imgURLs.Select(MakeAbsolute).ToList();
 
                 string n = Environment.NewLine + Environment.NewLine;
+                StringBuilder urlTower = new StringBuilder();
+
                 foreach (string s in imgURLs)
                 {
-                    ImageLinksTextBox.Text += s + n;
+                    urlTower.Append(s + n);
                 }
+                ImageLinksTextBox.Text = urlTower.ToString();
             }
         }
 
@@ -155,6 +158,49 @@ namespace JohannasLab5
             ProgressBar.Visible = true;
             int countProgress = 0;
             int countessEmptiness = 0;
+            int lostSouls = 0;
+
+            HttpClient webWizard = new HttpClient();
+            List<Task<IMGKit>> downloadsInDistress = imgURLs.Select(u => GenerateIMGKit(u, webWizard)).ToList();
+
+            while (downloadsInDistress.Count > 0)
+            {
+                Task<IMGKit> readyToBeSaved = await Task.WhenAny(downloadsInDistress);
+                downloadsInDistress.Remove(readyToBeSaved);
+                IMGKit kitty;
+                try
+                {
+                    kitty = await readyToBeSaved;
+                }
+                catch
+                {
+                    lostSouls++;
+                    LostFilesLabel.Text = "Unsuccessfully saved: " + lostSouls;
+                    LostFilesLabel.Visible = true;
+                    continue;
+                }
+
+                if (kitty.Content.Length > 0)
+                {
+                    await WriteAllBytesAsync(URLToPath(kitty.URL), kitty.Content);
+                }
+                else
+                {
+                    countessEmptiness++;
+                    EmptyLinkLabel.Text = "Empty links: " + countessEmptiness;
+                    EmptyLinkLabel.Visible = true;
+                }
+                countProgress++;
+                CalculateProgress(imgURLs.Count, countProgress);
+            }
+        }
+
+        private async Task DownloadImagesThrottled()
+        {
+            ProgressBar.Visible = true;
+            int countProgress = 0;
+            int countessEmptiness = 0;
+            int lostSouls = 0;
 
             List<Task<IMGKit>> downloadsInDistress = new List<Task<IMGKit>>();
             HttpClient webWizard = new HttpClient();
@@ -168,10 +214,22 @@ namespace JohannasLab5
                 {
                     Task<IMGKit> readyToBeSaved = await Task.WhenAny(downloadsInDistress);
                     downloadsInDistress.Remove(readyToBeSaved);
-
-                    if (readyToBeSaved.Result.Content.Length > 0)
+                    IMGKit kitty;
+                    try
                     {
-                        await WriteAllBytesAsync(URLToPath(readyToBeSaved.Result.URL), readyToBeSaved.Result.Content);
+                        kitty = await readyToBeSaved;
+                    }
+                    catch
+                    {
+                        lostSouls++;
+                        LostFilesLabel.Text = "Unsuccessfully saved: " + lostSouls;
+                        LostFilesLabel.Visible = true;
+                        continue;
+                    }
+
+                    if (kitty.Content.Length > 0)
+                    {
+                        await WriteAllBytesAsync(URLToPath(kitty.URL), kitty.Content);
                     }
                     else
                     {
@@ -185,18 +243,18 @@ namespace JohannasLab5
             }
         }
 
-        private void ExtractButton_Click(object sender, EventArgs e)
+        private async void ExtractButton_Click(object sender, EventArgs e)
         {
             RefreshField();
-            HandleURL();
+            await HandleURL();
         }
 
-        private void URLEaterTextBox_KeyPress(object sender, KeyPressEventArgs e)
+        private async void URLEaterTextBox_KeyPress(object sender, KeyPressEventArgs e)
         {
             if (e.KeyChar == '\r')
             {
                 RefreshField();
-                HandleURL();
+                await HandleURL();
             }
         }
 
@@ -215,7 +273,14 @@ namespace JohannasLab5
                     ExtractButton.Enabled = false;
                     SaveImgsButton.Enabled = false;
 
-                    await DownloadImagesALaFredrik();
+                    if (ThrottleCheckBox.Checked)
+                    {
+                        await DownloadImagesThrottled();
+                    }
+                    else
+                    {
+                        await DownloadImagesALaFredrik();
+                    }
 
                     DownloadCompletedLabel.Visible = true;
                     DownloadCompletedTimer.Enabled = true;
